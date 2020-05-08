@@ -49,48 +49,56 @@ class simplex:
         tmp_c_val = self.table[self.rows-1][tmp_column]
         for c in range(2, self.columns-2):
             t = self.table[self.rows-1][c]
-            if t > tmp_c_val:
+            if t < tmp_c_val:
                 tmp_c_val = t
+                tmp_column = c
 
         tmp_row = 1
-        tmp_r_val = self.table[1][self.columns-1]
+        tmp_r_val = self.table[1][self.columns-1]/self.table[1][tmp_column]
         for r in range(2, self.rows-3):
-            t = self.table[r][self.columns-1]
+            t = self.table[r][self.columns-1]/self.table[r][tmp_column]
             if t > tmp_r_val:
                 tmp_r_val = t
-        print(tmp_r_val)
-        print(tmp_c_val)
+                tmp_row = r
+        print(tmp_column)
+        print(tmp_row)
         return tmp_r_val, tmp_c_val
-        # column = 2
-        # row = 0
-        # tmp_c_value = self.table[1][self.columns-1]/self.table[1][self.columns-1]
-        # for r in range(1, self.rows-3):
-        #     if self.table[r][self.columns-1]/self.table[r][self.columns-1] > tmp_c_value:
-        #         row = r
-        # print(row)
-        # print(column)
-        # return row, column
-
+  
+    def check_optimality(self):
+        for i in range(1,self.columns-2):
+            if self.table[self.rows-1][i] < 0:
+                return False
+        return True
+    
     def calculation_iter(self):
         self.table = []    
 
-def get_max_value_index(data):
-    tmp_value = data[0]
-    tmp_value_index = 0
-    for i in range(0,data.size):
-        if data[i] > tmp_value:
-            tmp_value = data[i]
-            tmp_value_index = i
-    return tmp_value_index
+    def phase_one(self):
+        stop = self.check_optimality()
+        while stop!= True:
+            self.calculation_iter()
+        return 0
 
-def get_min_value_index(data):
-    tmp_value = data[0]
-    tmp_value_index = 0
-    for i in range(0,data.size):
-        if data[i] > tmp_value:
-            tmp_value = data[i]
-            tmp_value_index = i
-    return tmp_value_index
+    def phase_two(self):
+        return 0
+
+# def get_max_value_index(data):
+#     tmp_value = data[0]
+#     tmp_value_index = 0
+#     for i in range(0,data.size):
+#         if data[i] > tmp_value:
+#             tmp_value = data[i]
+#             tmp_value_index = i
+#     return tmp_value_index
+
+# def get_min_value_index(data):
+#     tmp_value = data[0]
+#     tmp_value_index = 0
+#     for i in range(0,data.size):
+#         if data[i] > tmp_value:
+#             tmp_value = data[i]
+#             tmp_value_index = i
+#     return tmp_value_index
 
 n = 3
 m = 3
@@ -103,3 +111,4 @@ matrix = np.vstack((cj, base))
 st = simplex()
 st.get_problem_coefficients()
 st.find_pivot()
+# print(st.check_optimality())
