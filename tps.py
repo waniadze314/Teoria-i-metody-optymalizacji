@@ -1,22 +1,34 @@
 import numpy as np
 from sys import stdin
+np.set_printoptions(precision=2)
+np.set_printoptions(suppress=True)
 class simplex:
     def __init__(self):
         # I_matrix = np.identity(n, dtype = float)
         self.rows = 0
         self.columns = 0
-        self.in_variable = 'x0'
-        self.out_variable = 'x0'
+        self.variables_counter = 0
+        self.inequations_counter = 0
         self.table = []
+        self.init_table = []
+        self.base_variables = []
+        self.key_row = 0
+        self.key_column = 0
+        self.key_value = 0
 
     def get_problem_coefficients(self):
         tmp_eq_row = 1
         tmp_rows, tmp_columns = map(int, input().split())
+        self.inequations_counter = tmp_rows
+        self.variables_counter = tmp_columns
+        self.base_variables = np.zeros((tmp_rows,1))
+        for i in range(1,tmp_rows+1):
+            self.base_variables[i-1] = tmp_columns + i
         tmp_iden_row = tmp_columns + 1
         self.rows = tmp_rows + 3
         self.columns = tmp_columns + tmp_rows + 2
         equations = []
-        for i in range(n):
+        for i in range(0,tmp_rows):
             equations.append(list(map(float, input().split())))
         boundaries_coefs = list(map(float, input().split()))
         function_coefs = list(map(float, input().split()))    
@@ -39,7 +51,17 @@ class simplex:
             self.table[self.rows-2][c] = tmp_z
             self.table[self.rows-1][c] = self.table[0][c] - self.table[self.rows-2][c]
         self.table[0][0] = self.table[self.rows-1][self.columns-1] = 0
+        self.init_table = self.table
+        self.calculate_value()
         print(self.table)
+        print(self.base_variables)
+
+    def calculate_value(self):
+        function_value = 0
+        for r in range(1, self.rows-2):
+            function_value = function_value + self.table[r][0]*self.table[r][self.columns-1]
+        self.table[self.rows-2][self.columns-1] = function_value
+        return function_value
 
     def print_table(self):
         print(self.table)
@@ -47,68 +69,67 @@ class simplex:
     def find_pivot(self):
         tmp_column = 1
         tmp_c_val = self.table[self.rows-1][tmp_column]
-        for c in range(2, self.columns-2):
+        for c in range(2, self.columns-1):
             t = self.table[self.rows-1][c]
-            if t < tmp_c_val:
+            if t > tmp_c_val:
                 tmp_c_val = t
                 tmp_column = c
-
         tmp_row = 1
         tmp_r_val = self.table[1][self.columns-1]/self.table[1][tmp_column]
-        for r in range(2, self.rows-3):
+        for r in range(2, self.rows-2):
             t = self.table[r][self.columns-1]/self.table[r][tmp_column]
-            if t > tmp_r_val:
+            if t < tmp_r_val:
                 tmp_r_val = t
                 tmp_row = r
-        print(tmp_column)
-        print(tmp_row)
-        return tmp_r_val, tmp_c_val
+        self.key_column = tmp_column
+        self.key_row = tmp_row        
+        self.key_value = self.table[tmp_row][tmp_column]
+        return
   
     def check_optimality(self):
-        for i in range(1,self.columns-2):
-            if self.table[self.rows-1][i] < 0:
+        for i in range(1,self.columns-1):
+            if self.table[self.rows-1][i] > 0:
                 return False
         return True
     
     def calculation_iter(self):
-        self.table = []    
+        tmp_table = np.copy(self.table)
+        self.find_pivot()
+        self.table[self.key_row][0] = self.table[0][self.key_column]
+        self.base_variables[self.key_row-1] = self.key_column
+
+        for c in range(1, self.columns):
+            self.table[self.key_row][c] = tmp_table[self.key_row][c]/self.key_value
+        
+        for r in range(1, self.rows-2):
+            if r != self.key_row:                
+                for c in range(1, self.columns):
+                    self.table[r][c] = tmp_table[r][c] - ((tmp_table[self.key_row][c] * tmp_table[r][self.key_column])/self.key_value)
+        
+        for c in range(1,self.columns-1):
+            tmp_z = 0
+            for r in range(1,self.rows-1):
+                tmp_z = tmp_z + self.table[r][0] * self.table[r][c]
+            self.table[self.rows-2][c] = tmp_z
+            self.table[self.rows-1][c] = self.table[0][c] - self.table[self.rows-2][c]
+        f_val = self.calculate_value()
+        self.print_table()
+        print("Base variables: ", self.base_variables)
+        print("Function value: ", f_val)
 
     def phase_one(self):
         stop = self.check_optimality()
-        while stop!= True:
+        iteration = 0
+        while stop==False:
             self.calculation_iter()
-        return 0
+            stop = self.check_optimality()
+            iteration = iteration + 1
+            print(iteration)
+        return iteration
 
     def phase_two(self):
         return 0
 
-# def get_max_value_index(data):
-#     tmp_value = data[0]
-#     tmp_value_index = 0
-#     for i in range(0,data.size):
-#         if data[i] > tmp_value:
-#             tmp_value = data[i]
-#             tmp_value_index = i
-#     return tmp_value_index
-
-# def get_min_value_index(data):
-#     tmp_value = data[0]
-#     tmp_value_index = 0
-#     for i in range(0,data.size):
-#         if data[i] > tmp_value:
-#             tmp_value = data[i]
-#             tmp_value_index = i
-#     return tmp_value_index
-
-n = 3
-m = 3
-core = np.array([[1,2,3],[4,5,6],[7,8,9]])
-I = np.array([[1,0,0],[0,1,0],[0,0,1]])
-cj = np.array([0,0,0,0,0,0])
-base = np.concatenate((core,I),axis = 1)
-matrix = np.vstack((cj, base))
-
 st = simplex()
 st.get_problem_coefficients()
-st.find_pivot()
-# print(st.check_optimality())
+st.phase_one()
