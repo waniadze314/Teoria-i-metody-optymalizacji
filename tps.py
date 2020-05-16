@@ -16,6 +16,8 @@ class two_phase_simplex:
         self.key_column = 0
         self.key_value = 0
         self.tables_list = []
+        self.values_list = []
+        self.points_list = []
 
     def get_problem_coefficients(self, values, bounds):
         self.number_of_bounds = bounds
@@ -61,10 +63,9 @@ class two_phase_simplex:
         for n in range(0,self.number_of_variables):
             self.non_base_variables[n] = n + 1
         print(self.table)
-        # print("Base variables:", self.base_variables)
-        # print("Non-base variables: ", self.non_base_variables)
         
     def calculate_value(self):
+        point = np.zeros(self.number_of_variables)
         function_value = 0
         number_of_all_variables = self.number_of_bounds+self.number_of_variables
         coefs = np.zeros(number_of_all_variables)
@@ -73,7 +74,9 @@ class two_phase_simplex:
 
         for v in range (0,self.number_of_variables):
             function_value = function_value + coefs[v]*self.function_coefs[v]
+            point[v] = coefs[v]
         self.table[0][0] = function_value
+        self.points_list.append(point)
         return
 
     def find_minimal_row(self):
@@ -98,9 +101,6 @@ class two_phase_simplex:
             return -1
         else:
             return column_index
-
-        
-
 
     def print_table(self):
         print(self.table)
@@ -141,21 +141,20 @@ class two_phase_simplex:
             else:
                 return True
 
-    def phase_one(self):
+    def phase_one(self, table_list):
+        table_list.append(self.table)
         if self.check_if_permissible() == True:
             return
         else:
             row = self.find_minimal_row()
             column = self.find_in_variable()
             if column == -1:
+                print("END")
                 return False
+
             else:
                 while self.check_if_permissible == False:
-                    self.phase_iteration()
-
-            
-
-    
+                    table_list.append(self.phase_iteration())
 
     def phase_iteration(self):
         tmp_table = np.copy(self.table)
@@ -175,21 +174,20 @@ class two_phase_simplex:
             for c in range(0, self.number_of_variables+1):
                 if r != self.key_row and c != self.key_column:
                     self.table[r][c] = tmp_table[r][c] - tmp_table[self.key_row][c]*tmp_table[r][self.key_column]/self.key_value
-
-
+        
         self.base_variables[self.key_row-1], self.non_base_variables[self.key_column-1] =  self.non_base_variables[self.key_column-1], self.base_variables[self.key_row-1]
         self.calculate_value()
         print(self.table)
+        return self.table
 
-    def phase_two(self):
+    def phase_two(self, table_list):
         while self.check_optimality() == False:
-            self.phase_iteration()
+            table_list.append(self.phase_iteration())
 
     def calculate_table(self):
         tables = []
-        if self.phase_one() == False:
+        if self.phase_one(tables) == False:
             print("Problem sprzeczny")
             tables.append("Problem sprzeczny")
-        self.phase_two()
-
-        return tables
+        self.phase_two(tables)
+        return tables, self.points_list, self.table[0][0]
