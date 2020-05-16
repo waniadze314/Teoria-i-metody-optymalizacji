@@ -15,6 +15,7 @@ class two_phase_simplex:
         self.key_row = 0
         self.key_column = 0
         self.key_value = 0
+        self.tables_list = []
 
     def get_problem_coefficients(self, values, bounds):
         self.number_of_bounds = bounds
@@ -75,6 +76,31 @@ class two_phase_simplex:
         self.table[0][0] = function_value
         return
 
+    def find_minimal_row(self):
+        tmp_min = np.inf
+        row_index = 1
+        for r in range(1,self.number_of_bounds+1):
+            val = self.table[r][0]
+            if val < 0 and val < tmp_min:
+                tmp_min = val;
+                row_index = r
+        return row_index
+
+    def find_in_variable(self):
+        tmp_min = np.inf
+        column_index = 0
+        for c in range(1,self.number_of_variables+1):
+            val = self.table[0][c]
+            if val < 0 and val < tmp_min:
+                tmp_min=val;
+                column_index = c
+        if column_index == 0:
+            return -1
+        else:
+            return column_index
+
+        
+
 
     def print_table(self):
         print(self.table)
@@ -119,10 +145,19 @@ class two_phase_simplex:
         if self.check_if_permissible() == True:
             return
         else:
-            return
+            row = self.find_minimal_row()
+            column = self.find_in_variable()
+            if column == -1:
+                return False
+            else:
+                while self.check_if_permissible == False:
+                    self.phase_iteration()
+
+            
+
     
 
-    def phase_two_iteration(self):
+    def phase_iteration(self):
         tmp_table = np.copy(self.table)
         self.find_pivot()
 
@@ -148,9 +183,13 @@ class two_phase_simplex:
 
     def phase_two(self):
         while self.check_optimality() == False:
-            self.phase_two_iteration()
+            self.phase_iteration()
 
     def calculate_table(self):
-
-        self.phase_one()
+        tables = []
+        if self.phase_one() == False:
+            print("Problem sprzeczny")
+            tables.append("Problem sprzeczny")
         self.phase_two()
+
+        return tables
